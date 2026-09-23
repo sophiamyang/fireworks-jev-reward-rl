@@ -1,0 +1,45 @@
+{
+  "version": "scale-context-v1",
+  "train_count": 96,
+  "validation_count": 24,
+  "smoke_ids": [
+    "v2-train-oven-thread",
+    "v2-train-benchmark-summary",
+    "v2-train-rain-caption",
+    "v2-train-fixture-reply",
+    "v2-train-seating-notes",
+    "v2-train-small-hobby"
+  ],
+  "files": {
+    "train.jsonl": "ad1c026f6b13ad1573c37ca83ba6d78893341f8a620279b767e17a7f513d9917",
+    "validation.jsonl": "5517de5af360dd251c2fba1bd87e760565df242dd777671c55b232de00ce619a"
+  },
+  "builder_sha256": "35b387ea6523e3c749e81ab394c266423350b97534efcd68072df0f953789e76",
+  "authored_sha256": "bae402b20dd3c38389b854c4ea92bc3dce3f4c12430960ac5ca5b2a9cd142759",
+  "source_cache_sha256": "38bf6d36663206420620c70140c78286c8833621e8467689f4a7ab0c711f6a3e",
+  "families": {
+    "train": {
+      "social": 18,
+      "summary": 15,
+      "rewrite": 17,
+      "reply": 15,
+      "notes": 11,
+      "direct": 13,
+      "cut": 7
+    },
+    "validation": {
+      "social": 12,
+      "summary": 3,
+      "rewrite": 3,
+      "reply": 2,
+      "cut": 1,
+      "notes": 2,
+      "direct": 1
+    }
+  },
+  "rules": [
+    "Task inputs only, not SFT or preference targets.",
+    "All source material is synthetic.",
+    "Do not adapt training or rewards to the validation outputs."
+  ]
+}

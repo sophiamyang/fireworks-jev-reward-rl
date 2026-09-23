@@ -1,0 +1,31 @@
+{
+  "experiment": "raw-simple-v1",
+  "model": "accounts/fireworks/models/qwen3p8-27b",
+  "tokenizer": "Qwen/Qwen3.8-27B",
+  "tokenizer_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "train_file": "experiments/scale-v1/train.jsonl",
+  "validation_file": "experiments/scale-v1/validation.jsonl",
+  "dataset_manifest": "experiments/scale-v1/manifest.json",
+  "train_limit": 96,
+  "validation_limit": 24,
+  "steps": 24,
+  "epochs": 1,
+  "groups_per_step": 4,
+  "group_size": 8,
+  "eval_samples": 2,
+  "max_tokens": 3072,
+  "max_seq_len": 8192,
+  "temperature": 1,
+  "rank": 8,
+  "seed": 713,
+  "learning_rate": 0.00005,
+  "kl_beta": 0.05,
+  "max_reference_kl": 0.1,
+  "min_group_spread": 0.1,
+  "advantage_std_floor": 0.1,
+  "weights": {
+    "style": 0.5,
+    "quality": 0.5
+  },
+  "reward_variant": "style-quality-support-v1"
+}

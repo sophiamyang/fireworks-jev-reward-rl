@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fireworks-rl-jev-scorer"
+version = "0.1.0"
+description = "A No AI Slop writing cookbook using Fireworks serverless RL and Jev rewards"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fireworks-ai[training-sdk]==1.2.12",
+  "tinker==0.23.0",
+  "transformers==5.5.4",
+  "tokenizers==0.22.2",
+  "huggingface-hub==1.32.0",
+  "httpx==0.28.1",
+  "jinja2>=3.1.6,<4",
+  "wandb==0.30.0",
+  "python-dotenv>=1.1,<2",
+]
+
+[project.scripts]
+fw-jev = "fw_jev.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fw_jev"]
+
+[dependency-groups]
+dev = ["pytest>=8.4,<9", "ruff>=0.14,<1", "nbformat>=5.10,<6"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E9", "F", "I"]

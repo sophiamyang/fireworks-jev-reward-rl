@@ -1,0 +1,17 @@
+.venv/
+.bootstrap/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+runs/
+.local-validation/
+.ipynb_checkpoints/
+dist/
+build/
+wandb/
+.DS_Store

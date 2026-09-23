@@ -1,0 +1,12 @@
+{
+  "version": "raw-base-mixed-objective-smoke-v2",
+  "purpose": "Admit a bounded learning experiment, not certify model quality or factual correctness",
+  "minimum_eligible_groups": 3,
+  "minimum_reviewed_groups": 3,
+  "minimum_pair_reward_margin": 0.05,
+  "all_outputs_technically_valid": true,
+  "allowed_preference_axes": ["style", "quality", "source_support"],
+  "review": "Read every full draft against the actual user request. Both drafts in an accepted pair must attempt the requested task. They may differ in style, omissions, quality or source fidelity. Name the axis and concrete evidence; do not call source improvements style improvements. Fictional invention is allowed when requested; report ambiguity rather than inventing hidden requirements. Log scorer disagreements as well as agreements.",
+  "known_limitation": "Jev can miss factual errors, such as an incorrect duration. Fixed canaries and this review do not validate general factual accuracy.",
+  "failure_action": "Stop; no automatic resampling, policy weakening or optimizer launch"
+}

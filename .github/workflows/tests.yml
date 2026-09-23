@@ -1,0 +1,20 @@
+name: offline-tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.17"
+      - run: uv sync --locked --python 3.12
+      - run: uv run ruff check .
+      - run: uv run pytest -q
+      - run: uv run python experiments/scale-v1/build_dataset.py --check
+      - run: uv run fw-jev plan --config experiments/raw-base-v1/config.json
+      - run: uv run fw-jev run --config experiments/raw-base-v1/config.json --output runs/ci-raw-mock --mock
+      - run: uv run fw-jev report runs/ci-raw-mock

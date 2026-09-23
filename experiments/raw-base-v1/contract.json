@@ -1,0 +1,46 @@
+{
+  "version": "raw-simple-v1-success-v1",
+  "reward_version": "jev-style-quality-support-v1",
+  "comparison": "fresh raw base versus 24 updates with a single unchanged reward; existing opened 24-prompt evaluation suite",
+  "frozen_before_sampling": true,
+  "minimum_reward_gain": 0.08,
+  "minimum_writing_gain": 0.03,
+  "minimum_style_gain": 0.03,
+  "maximum_quality_drop": 0.02,
+  "minimum_prompt_win_fraction": 0.6,
+  "bootstrap_repetitions": 10000,
+  "bootstrap_seed": 271828,
+  "minimum_prompt_bootstrap_lower_bound": 0,
+  "maximum_increase_guard_failure_fraction": 0.05,
+  "shortening_review_trigger_ratio": 0.85,
+  "blind_review": {
+    "required": true,
+    "sample_index_per_prompt": 0,
+    "reviewer": "assistant score-hidden A/B review; not independent human preference data",
+    "criteria": [
+      "answers actual request",
+      "source support including invented actions",
+      "key content retained despite shortening",
+      "clear natural prose, no leaked writing instructions"
+    ],
+    "pass": "more after wins than before wins, no increase in reviewed source errors, omissions or nonanswers",
+    "no_training_use": true
+  },
+  "limits": {
+    "optimizer_updates": 24,
+    "training_drafts": 768,
+    "validation_drafts": 96,
+    "jev_requests_including_fixed_checks": 896,
+    "separate_zero_update_smoke_drafts": 24,
+    "separate_smoke_jev_requests": 56,
+    "automatic_optimizer_replays": 0,
+    "automatic_extra_training_passes": 0
+  },
+  "honesty": [
+    "Do not force a poor baseline or select examples by reward to decide success.",
+    "The evaluation suite is already inspected, not a new untouched holdout.",
+    "Same Jev for training and evaluation; reward is not authorship probability or independent quality evidence.",
+    "No global length penalty; inspect source support, omissions, quality and requested format.",
+    "Do not change the reward, data, thresholds or step bound after viewing results."
+  ]
+}
