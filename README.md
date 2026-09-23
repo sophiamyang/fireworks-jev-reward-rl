@@ -87,8 +87,8 @@ Install [uv](https://docs.astral.sh/uv/getting-started/installation/), which
 also fetches Python 3.12, then:
 
 ```bash
-git clone https://github.com/sophiamyang/fireworks_rl_jev_scorer.git
-cd fireworks_rl_jev_scorer
+git clone https://github.com/sophiamyang/fireworks-jev-reward-rl.git
+cd fireworks-jev-reward-rl
 uv sync --locked
 uv run pytest -q
 uv run fw-jev run --output runs/quickstart-mock --mock

@@ -28,8 +28,8 @@ downloads Python 3.12 for you), then:
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # or see the uv install page
-git clone https://github.com/sophiamyang/fireworks_rl_jev_scorer.git
-cd fireworks_rl_jev_scorer
+git clone https://github.com/sophiamyang/fireworks-jev-reward-rl.git
+cd fireworks-jev-reward-rl
 uv sync --locked
 uv run pytest -q
 uv run fw-jev plan
@@ -187,10 +187,14 @@ Fireworks'
 
 ## Good to know
 
-- **Expected noise in live logs.** The Fireworks SDK may print a warning about
-  sampling logprobs, and Tinker may print telemetry tracebacks. Both are
-  harmless; the run's `status.json` is what tells you whether it succeeded.
+- **Expected noise in live logs.** These look alarming but are harmless:
+  - Tinker telemetry tracebacks;
+  - `DeploymentSampler … Transient ReadError (attempt 1/7); retrying`: the
+    Fireworks SDK retrying a dropped connection;
+  - a Fireworks SDK warning about sampling logprobs;
+  - `Task was destroyed but it is pending` after you press Ctrl-C.
 
+  The run's `status.json` says whether it actually succeeded.
 - **Keep `runs/` private and backed up.** It holds every draft, score,
   checkpoint path and optimizer receipt. W&B is not a full backup.
 - **Use a new output folder for every run.** The CLI refuses to overwrite one.
