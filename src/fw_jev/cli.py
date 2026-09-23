@@ -45,13 +45,24 @@ def main():
         elif not args.execute and not getattr(args, "mock", False):
             parser.error("No paid API calls made. Use --execute, or --mock for an offline plumbing test.")
         elif args.command == "run":
-            result = run(
+            summary = run(
                 args.config,
                 args.output,
                 mock=args.mock,
                 wandb=args.wandb,
                 smoke_from=args.smoke_from,
             )
+            # Keep evaluation scores off the console so the blind review stays blind.
+            status = (summary or {}).get("status", {})
+            result = {
+                "output": args.output,
+                "state": status.get("state"),
+                "mock": status.get("mock"),
+                "optimizer_updates": status.get("optimizer_updates"),
+                "next": "Smoke: review it with scripts/review_raw_smoke.py"
+                if not status.get("optimizer_updates")
+                else "Do the blind review first; `fw-jev report` prints scores.",
+            }
         else:
             c, _, _, _ = load(args.config)
             judge = make_judge(os.environ.get("TYPESAFE_API_KEY"))

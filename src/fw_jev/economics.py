@@ -9,7 +9,7 @@ PRICE = {
     "usd_per_million_output_tokens": 0.0,
     "source": "https://docs.typesafe.ai/models",
     "verified_date": "2026-09-21",
-    "kind": "published list-price estimate; excludes taxes, discounts, failures and Fireworks",
+    "kind": "published list-price estimate; excludes taxes, discounts, failed attempts and Fireworks",
 }
 
 
@@ -46,7 +46,10 @@ def summarize(responses):
             "warm_p50": statistics.median(latencies[1:]) if n > 1 else None,
         },
         "sum_request_seconds": sum(latencies),
+        # Failed attempts may still be billed; their usage is not reported.
+        "failed_attempts_before_success": sum(len(r["telemetry"].get("failed_attempts", [])) for r in responses),
         "price": PRICE,
-        "measurement": "Sequential client-side HTTP round trips; not server-only latency. No retries.",
+        "measurement": "Sequential client-side HTTP round trips of successful attempts; not server-only "
+        "latency. Retried failures are counted separately.",
         "caveat": "Small samples are descriptive, not a throughput or competitor benchmark.",
     }

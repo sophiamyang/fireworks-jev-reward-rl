@@ -2,6 +2,7 @@
 
 import json
 import math
+import random
 import re
 import time
 
@@ -167,12 +168,37 @@ def calculate(response, draft, *, truncated=False, malformed=False, weights=None
     }
 
 
+RETRY_STATUSES = frozenset({429}) | frozenset(range(500, 600))
+RETRY_DELAYS = (2, 4, 8)  # Seconds; scoring is read-only, so a retry cannot change model state.
+
+
 class Jev:
-    def __init__(self, key):
+    def __init__(self, key, *, delays=RETRY_DELAYS, sleep=time.sleep):
         if not key or key == "replace_locally":
             raise ValueError("Set TYPESAFE_API_KEY locally")
         self.key = key
         self.client = httpx.Client(timeout=90, follow_redirects=False)
+        self.delays, self.sleep = tuple(delays), sleep
+
+    def post(self, payload):
+        """Retry only transient failures (429, 5xx, timeouts, dropped connections)."""
+        failures = []
+        for attempt in range(len(self.delays) + 1):
+            if attempt:
+                self.sleep(self.delays[attempt - 1] * random.uniform(1, 1.25))
+            started = time.perf_counter()
+            try:
+                response = self.client.post(
+                    ENDPOINT, headers={"Authorization": "Bearer " + self.key}, json=payload
+                )
+            except httpx.TransportError as exc:
+                failures.append(type(exc).__name__)
+                continue
+            if response.status_code in RETRY_STATUSES:
+                failures.append(response.status_code)
+                continue
+            return response, time.perf_counter() - started, failures
+        raise RuntimeError(f"Jev unavailable after {len(failures)} attempts ({failures}); no reward assigned")
 
     def score(self, request, draft, *, grounded=False):
         payload = {
@@ -182,9 +208,7 @@ class Jev:
         }
         started = time.perf_counter()
         try:
-            response = self.client.post(
-                ENDPOINT, headers={"Authorization": "Bearer " + self.key}, json=payload
-            )
+            response, round_trip, failures = self.post(payload)
         except httpx.HTTPError:
             raise RuntimeError("Jev network failure; no reward assigned") from None
         if response.status_code != 200:
@@ -199,9 +223,11 @@ class Jev:
             **{k: data[k] for k in ("model", "answers", "usage") if k in data},
             "grounding_applicable": grounded,
             "telemetry": {
-                "latency_seconds": time.perf_counter() - started,
+                "latency_seconds": round_trip,
+                "wall_seconds_including_retries": time.perf_counter() - started,
+                "failed_attempts": failures,
                 "question_count": len(payload["questions"]),
-                "measurement": "client wall time, HTTP round-trip plus response validation",
+                "measurement": "successful HTTP round trip; failed attempts listed separately",
             },
         }
 

@@ -83,12 +83,12 @@ Fireworks sampling and training add an estimated $3–5 at list prices.
 
 ## Try it offline
 
-Python 3.12:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), which
+also fetches Python 3.12, then:
 
 ```bash
 git clone https://github.com/sophiamyang/fireworks_rl_jev_scorer.git
 cd fireworks_rl_jev_scorer
-python -m pip install uv==0.12.17
 uv sync --locked
 uv run pytest -q
 uv run fw-jev run --output runs/quickstart-mock --mock

@@ -196,7 +196,7 @@ def test_v2_review_fails_closed(tmp_path, defect):
 
 def test_success_contract_is_pinned_and_requires_review():
     contract = json.loads((CONFIG.parent / "contract.json").read_text())
-    assert digest(CONFIG.parent / "contract.json") == "0f08309f9f4bac8c3cd8cdaaf33a8d6a3c7b0f6025379fccd20d96ae954566b3"
+    assert digest(CONFIG.parent / "contract.json") == "1b38b46283b67aedffdb325dc82428b57640ab8b7c4c9dc2e4ec6b22157f1f9f"
     assert contract["reward_version"] == "jev-style-quality-support-v1"
     assert contract["maximum_quality_drop"] == 0.02
     assert contract["limits"]["optimizer_updates"] == 24

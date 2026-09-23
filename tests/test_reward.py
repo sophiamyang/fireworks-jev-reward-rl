@@ -171,3 +171,45 @@ def test_reports_refuse_to_mix_reward_versions():
     rows[1]["score"]["version"] = "different"
     with pytest.raises(ValueError, match="different reward protocols"):
         report.stats(rows)
+
+
+def test_jev_retries_transient_failures_then_scores():
+    import httpx
+
+    from fw_jev import reward
+    from fw_jev.mock import response
+
+    good = {k: v for k, v in response(0.8).items() if k in ("model", "answers")}
+    replies = [httpx.Response(520), httpx.Response(529), httpx.Response(200, json=good)]
+    judge = reward.Jev("key", sleep=lambda s: None)
+    judge.client = httpx.Client(transport=httpx.MockTransport(lambda request: replies.pop(0)))
+    raw = judge.score("Write a note.", "A plain note.")
+    assert raw["telemetry"]["failed_attempts"] == [520, 529]
+    assert not replies
+
+
+def test_jev_stops_after_retries_and_never_retries_client_errors():
+    import httpx
+    import pytest
+
+    from fw_jev import reward
+
+    calls = []
+
+    def handler(status):
+        def respond(request):
+            calls.append(status)
+            return httpx.Response(status)
+
+        return respond
+
+    judge = reward.Jev("key", sleep=lambda s: None)
+    judge.client = httpx.Client(transport=httpx.MockTransport(handler(503)))
+    with pytest.raises(RuntimeError, match="unavailable after 4 attempts"):
+        judge.score("Write a note.", "A plain note.")
+    assert len(calls) == 4
+    calls.clear()
+    judge.client = httpx.Client(transport=httpx.MockTransport(handler(401)))
+    with pytest.raises(RuntimeError, match="HTTP 401"):
+        judge.score("Write a note.", "A plain note.")
+    assert calls == [401]

@@ -9,6 +9,24 @@ from fw_jev.storage import digest
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Tell a fixable review-form problem apart from a smoke that shouldn't train.
+FORM = ("full-draft review", "Every smoke sample", "labels", "scorer limitations",
+        "reviewed mixed-objective rankings", "ranking evidence", "nonanswers", "defect",
+        "Source-support ranking")
+DISAGREE = ("frozen reward margin",)
+SIGNAL = ("numeric signal", "technical failures", "fixed-draft checks")
+
+
+def explain(message):
+    if any(key in message for key in FORM):
+        return "Review form: fix smoke-review.json and run the check again."
+    if any(key in message for key in DISAGREE):
+        return ("Jev disagrees with a ranking by less than 0.05. Pick another pair you and Jev agree on; "
+                "if there aren't three, stop: the reward signal isn't ready.")
+    if any(key in message for key in SIGNAL):
+        return "Signal: this smoke shouldn't train. Stop; don't resample until it passes."
+    return "Setup: run a new smoke in a new folder with the current code and config."
+
 
 def init(folder):
     folder = Path(folder)
@@ -45,7 +63,10 @@ def main():
         print(init(args.folder))
     else:
         config, train, _, root = load(ROOT / "experiments/raw-base-v1/config.json")
-        print(json.dumps(check_admission(args.folder, root, config, train), indent=2))
+        try:
+            print(json.dumps(check_admission(args.folder, root, config, train), indent=2))
+        except ValueError as exc:
+            raise SystemExit(f"Check failed: {exc}\n{explain(str(exc))}") from None
 
 
 if __name__ == "__main__":

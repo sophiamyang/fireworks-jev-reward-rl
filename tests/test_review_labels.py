@@ -57,3 +57,17 @@ def test_style_pair_with_equal_labels_passes(smoke):
     assert check(*smoke, {}, {}, ["style"]) == 3
     both = {"key_content_present": False}
     assert check(*smoke, both, both, ["style", "quality"]) == 3
+
+
+def test_smoke_check_failures_say_what_to_do():
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "scripts/review_raw_smoke.py"
+    spec = importlib.util.spec_from_file_location("review_raw_smoke", path)
+    helper = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(helper)
+    assert helper.explain("Record observed scorer limitations").startswith("Review form")
+    assert helper.explain("Reviewed preference lacks the frozen reward margin").startswith("Jev disagrees")
+    assert helper.explain("Insufficient mixed-objective numeric signal").startswith("Signal")
+    assert helper.explain("Smoke source is stale").startswith("Setup")

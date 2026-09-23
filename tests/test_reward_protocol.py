@@ -78,3 +78,21 @@ def test_every_calculate_case_replays_exactly():
         )
         assert result == case["expected"], index
         assert result["version"] == GOLDEN["version"]
+
+
+def test_guard_thresholds_are_pinned():
+    from fw_jev.mock import response
+
+    def grounded(p_yes):
+        r = response(0.8)
+        r["grounding_applicable"] = True
+        r["answers"]["unsupported_claim"] = {
+            "type": "choice", "probabilities": {"yes": p_yes, "no": 1 - p_yes, "uncertain": 0.0}}
+        return r
+
+    assert reward.calculate(grounded(0.90), "A short plain note.")["reward"] == 0.0
+    assert reward.calculate(grounded(0.899), "A short plain note.")["reward"] > 0.0
+    looped = " ".join(["same three words"] * 4)  # repetition ratio well above 0.5
+    assert reward.calculate(response(0.8), looped)["guards"]["no_repetition_loop"] is False
+    ok = "One two three four five six seven eight nine ten."
+    assert reward.calculate(response(0.8), ok)["guards"]["no_repetition_loop"] is True

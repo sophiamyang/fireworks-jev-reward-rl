@@ -16,7 +16,7 @@
   "blind_review": {
     "required": true,
     "sample_index_per_prompt": 0,
-    "reviewer": "assistant score-hidden A/B review; not independent human preference data",
+    "reviewer": "score-hidden A/B review by whoever runs the tutorial; blind-ratings.json records who reviewed and whether scores were seen; not independent human preference data",
     "criteria": [
       "answers actual request",
       "source support including invented actions",

@@ -1,8 +1,12 @@
 # Tutorial: RL on Fireworks with Jev
 
 Train Qwen3.8-27B from its untrained base for 24 RL updates, with Jev scoring
-every draft. You need a Fireworks account with serverless training enabled for
-`accounts/fireworks/models/qwen3p8-27b` and a TypeSafe API key. No GPU needed.
+every draft. No GPU needed. You need:
+
+- A **Fireworks API key** ([create one](https://app.fireworks.ai/settings/users/api-keys)),
+  on an account with [serverless training](https://docs.fireworks.ai/fine-tuning/training-api/serverless)
+  enabled for `accounts/fireworks/models/qwen3p8-27b`.
+- A **TypeSafe API key** for Jev ([TypeSafe docs](https://docs.typesafe.ai/introduction)).
 
 | Step | What happens | Cost |
 |---|---|---|
@@ -19,12 +23,13 @@ will differ from the published run. There's also a
 
 ## 1. Install and test offline
 
-Python 3.12, from a fresh clone:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) (it also
+downloads Python 3.12 for you), then:
 
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh   # or see the uv install page
 git clone https://github.com/sophiamyang/fireworks_rl_jev_scorer.git
 cd fireworks_rl_jev_scorer
-python -m pip install uv==0.12.17
 uv sync --locked
 uv run pytest -q
 uv run fw-jev plan
@@ -64,14 +69,20 @@ uv run python scripts/review_raw_smoke.py init runs/tutorial-smoke
 Open `runs/tutorial-smoke/comparison.html`, read every draft against its
 prompt, and fill in `runs/tutorial-smoke/smoke-review.json`:
 
-- **For every draft:** replace the `null` labels with `true`/`false` and add a
-  short note.
+- **For every draft:** replace the four `null` labels with `true`/`false` and
+  add a short note.
+  - `answers_task`: it attempts what the prompt asked for.
+  - `source_faithful`: it doesn't contradict or invent facts beyond the supplied
+    source (`true` when there's no source).
+  - `key_content_present`: it keeps the details the prompt says matter.
+  - `ambiguous_request`: the prompt itself is unclear enough that reasonable
+    drafts could differ.
 - **Add at least three entries to `accepted_rankings`**, from three different
   prompts, each naming a draft that's clearly better than another. Each pair needs:
   - a reason, and one or more axes: `style`, `quality` or `source_support`;
   - two drafts that both attempt the task;
-  - a reward gap of at least 0.05, from a prompt whose rewards spread by 0.10
-    or more.
+  - Jev must agree with you: the draft you rank better needs a Jev reward at
+    least 0.05 higher, and the prompt's four rewards must spread by 0.10 or more.
 
   Rankings must agree with your labels. The better draft can't be the one
   that's unfaithful to the source or missing key content. A `source_support`
@@ -93,9 +104,14 @@ Then check it:
 uv run python scripts/review_raw_smoke.py check runs/tutorial-smoke
 ```
 
-This check is the only pass/fail gate for training. If it fails, stop. Don't
-resample until it passes, and don't loosen the rules; a failed smoke means the
-reward signal isn't ready to train on.
+This check is the only pass/fail gate for training. When it fails it says why:
+
+- **Review form:** a missing label, field or rule in your file. Fix it and check again.
+- **Jev disagrees:** a ranking where Jev's reward gap is under 0.05. Pick another
+  pair you and Jev agree on; if there aren't three, stop.
+- **Signal:** not enough spread, broken drafts or failed fixed checks. Stop.
+  Don't resample until it passes or loosen the rules.
+- **Setup:** the smoke doesn't match the current code or config. Run a new smoke.
 
 ## 4. Train
 
@@ -109,8 +125,13 @@ evaluation prompts, runs 24 updates (eight drafts per prompt, four prompts per
 update), then scores the final model. It stops on its own if something looks
 wrong, such as the policy drifting too far from the base model.
 
-If you change code after the smoke, run a new smoke first; the trainer
-rejects a smoke recorded with different code.
+The console shows training progress but hides evaluation scores, so you can
+still do a blind review. (W&B, if you turned it on, does show them.) If you
+change code after the smoke, run a new smoke first; the trainer rejects a smoke
+recorded with different code.
+
+If Jev returns a transient error (429, 5xx, timeout), the client retries up to
+three times with backoff before stopping. Optimizer calls are never retried.
 
 ## 5. Inspect the result
 
@@ -127,7 +148,7 @@ Read each pair in `blind-packet.json` and fill `blind-ratings.json`: your
 and `source_error`, `key_omission` and `answers_task` for each side. Set
 `blinded_to_key_and_rewards: true` only if you haven't seen any scores. Don't
 open `blind-key.json`, the HTML pages or the report until you're done. If you
-watched the training console, you've seen scores: set it to `false`, and the
+opened W&B or the report, you've seen scores: set it to `false`, and the
 evaluation will report the blind review as incomplete.
 
 Then reveal the scores:
@@ -150,9 +171,14 @@ Fireworks'
 1. **Promote the final checkpoint.** The session name is in
    `runs/tutorial-live/fireworks.json`; the final checkpoint is `demo-step-24`.
 
+   Run it with `uv run python` from the repository root:
+
    ```python
    import os
+   from dotenv import load_dotenv
    from fireworks.training.sdk import FireworksClient
+
+   load_dotenv()  # reads FIREWORKS_API_KEY from .env
 
    fw = FireworksClient(api_key=os.environ["FIREWORKS_API_KEY"])
    rows = fw.list_training_session_checkpoints("<session_name from fireworks.json>")
@@ -164,9 +190,8 @@ Fireworks'
    )
    ```
 
-2. **Download it** with
-   [firectl](https://docs.fireworks.ai/fine-tuning/deploying-loras)
-   (your account may need model-download permission):
+2. **Download it** with firectl ([install it](https://docs.fireworks.ai/tools-sdks/firectl/firectl),
+   then run `firectl signin`). Your account may need model-download permission:
 
    ```bash
    firectl model download accounts/<account-id>/models/my-no-ai-slop-lora ./my-adapter/
@@ -176,12 +201,28 @@ Fireworks'
    returns signed URLs instead; treat them like passwords.
 
 3. **Use it** with the exact base model it was trained on. To serve it on
-   Fireworks, create an on-demand deployment:
-   `firectl deployment create accounts/<account-id>/models/my-no-ai-slop-lora --deployment-shape default`
-   (see [deploying trained models](https://docs.fireworks.ai/fine-tuning/deploying-loras)).
-   Serverless per-token serving of your own LoRA isn't available.
+   Fireworks, create an on-demand deployment
+   ([deploying trained models](https://docs.fireworks.ai/fine-tuning/deploying-loras)):
+
+   ```bash
+   firectl deployment create accounts/<account-id>/models/my-no-ai-slop-lora --deployment-shape default
+   ```
+
+   **An on-demand deployment bills for its GPUs by the hour while it exists,**
+   whether or not you send requests
+   ([pricing](https://fireworks.ai/pricing)). Serverless per-token serving of
+   your own LoRA isn't available. Delete it when you're done, using the
+   deployment ID that `create` printed:
+
+   ```bash
+   firectl deployment delete <deployment-id>
+   ```
 
 ## Good to know
+
+- **Expected noise in live logs.** The Fireworks SDK may print a warning about
+  sampling logprobs, and Tinker may print telemetry tracebacks. Both are
+  harmless; the run's `status.json` is what tells you whether it succeeded.
 
 - **Keep `runs/` private and backed up.** It holds every draft, score,
   checkpoint path and optimizer receipt. W&B is not a full backup.

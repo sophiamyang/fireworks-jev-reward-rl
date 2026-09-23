@@ -184,10 +184,11 @@ def run(config_path, output, *, mock=False, wandb=False, smoke_from=None):
                             }
                         )
                 groups.append(group)
-                print(
-                    f"{phase} {case['id']}: " + ", ".join(f"{r['score']['reward']:.3f}" for r in group),
-                    flush=True,
+                # Evaluation scores stay hidden until the blind review; see `fw-jev report`.
+                shown = "scored" if phase in ("before", "after") else ", ".join(
+                    f"{r['score']['reward']:.3f}" for r in group
                 )
+                print(f"{phase} {case['id']}: {len(group)} drafts {shown}", flush=True)
             return groups
 
         if c["steps"]:
