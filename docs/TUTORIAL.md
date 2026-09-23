@@ -84,9 +84,12 @@ prompt, and fill in `runs/tutorial-smoke/smoke-review.json`:
   - Jev must agree with you: the draft you rank better needs a Jev reward at
     least 0.05 higher, and the prompt's four rewards must spread by 0.10 or more.
 
-  Rankings must agree with your labels. The better draft can't be the one
-  that's unfaithful to the source or missing key content. A `source_support`
-  pair needs the better draft faithful and the worse one not.
+  Rankings must agree with your labels: the better draft can't have a problem
+  the worse one doesn't (if the worse draft is faithful or has the key content,
+  the better one must too). Both drafts may have errors; then rank them on
+  `style` or `quality`, for example one small misstatement against several
+  invented details. A `source_support` pair needs the better draft faithful
+  and the worse one not.
 - **List at least one Jev limitation or disagreement** you noticed in
   `scorer_limitations` (required), set `reviewer` honestly (say if an assistant
   helped), and set `approved: true` when you're done.
