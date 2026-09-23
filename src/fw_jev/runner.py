@@ -30,7 +30,7 @@ def fingerprint(root):
     return {str(p.relative_to(root)): digest(p) for p in paths}
 
 
-def run(config_path, output, *, mock=False, wandb=False, smoke_from=None):
+def run(config_path, output, *, mock=False, wandb=False, smoke_from=None, require_review=False):
     c, train, validation, root = load(config_path)
     admission = None
     if c["steps"] and not mock:
@@ -38,7 +38,7 @@ def run(config_path, output, *, mock=False, wandb=False, smoke_from=None):
             raise ValueError("Run and inspect the zero-update smoke first; pass --smoke-from its folder")
         from .raw_base import check_admission
 
-        admission = check_admission(smoke_from, root, c, train)
+        admission = check_admission(smoke_from, root, c, train, require_review=require_review)
     if not mock:
         for key in ("FIREWORKS_API_KEY", "TYPESAFE_API_KEY"):
             if not os.environ.get(key) or os.environ[key] == "replace_locally":

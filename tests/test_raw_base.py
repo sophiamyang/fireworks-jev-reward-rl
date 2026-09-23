@@ -222,3 +222,22 @@ def test_notebook_is_clean_opt_in_wrapper_not_second_trainer():
     assert "RUN_LIVE = False" in joined and "fw_jev.cli" in joined
     assert "--smoke-from" in joined
     assert "forward_backward" not in joined and "optim_step" not in joined
+
+
+def test_review_is_optional_unless_required(tmp_path):
+    folder = tmp_path / "smoke"
+    run(SMOKE, folder, mock=True)
+    c, train, _, _ = load(CONFIG)
+    strip_mock_markers(folder)
+    save(folder / "verify-base-model-result.json", {"model_data": {"model_name": c["model"]}})
+    admission = check_admission(folder, ROOT, c, train)
+    assert admission["review"] == "not provided" and admission["reviewed_groups"] is None
+    with pytest.raises(ValueError, match="review required"):
+        check_admission(folder, ROOT, c, train, require_review=True)
+    review = review_fixture(folder, train)
+    save(folder / "smoke-review.json", dict(review, approved=False, accepted_rankings=[]))
+    assert check_admission(folder, ROOT, c, train)["review"] == "not approved"
+    with pytest.raises(ValueError):
+        check_admission(folder, ROOT, c, train, require_review=True)
+    save(folder / "smoke-review.json", review)
+    assert check_admission(folder, ROOT, c, train)["review"] == "approved"

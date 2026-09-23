@@ -55,7 +55,7 @@ TYPESAFE_API_KEY=replace_locally
 W&B is optional. To log metrics, set `WANDB_API_KEY` (and optionally
 `WANDB_ENTITY`) and add `--wandb` to a paid command.
 
-## 3. Run and review a smoke test
+## 3. Run a smoke test
 
 The smoke test samples four drafts for each of six training prompts and checks
 Jev on 16 fixed drafts. It makes no model updates.
@@ -63,58 +63,20 @@ Jev on 16 fixed drafts. It makes no model updates.
 ```bash
 uv run fw-jev run --config experiments/raw-base-v1/smoke.json \
   --output runs/tutorial-smoke --execute
-uv run python scripts/review_raw_smoke.py init runs/tutorial-smoke
 ```
 
-Open `runs/tutorial-smoke/comparison.html`, read every draft against its
-prompt, and fill in `runs/tutorial-smoke/smoke-review.json`:
+Training checks the smoke automatically before it starts. It needs:
 
-- **For every draft:** replace the four `null` labels with `true`/`false` and
-  add a short note.
-  - `answers_task`: it attempts what the prompt asked for.
-  - `source_faithful`: it doesn't contradict or invent facts beyond the supplied
-    source (`true` when there's no source).
-  - `key_content_present`: it keeps the details the prompt says matter.
-  - `ambiguous_request`: the prompt itself is unclear enough that reasonable
-    drafts could differ.
-- **Add at least three entries to `accepted_rankings`**, from three different
-  prompts, each naming a draft that's clearly better than another. Each pair needs:
-  - a reason, and one or more axes: `style`, `quality` or `source_support`;
-  - two drafts that both attempt the task;
-  - Jev must agree with you: the draft you rank better needs a Jev reward at
-    least 0.05 higher, and the prompt's four rewards must spread by 0.10 or more.
+- all 32 fixed Jev checks passed;
+- every draft complete and well formed (not empty, cut off or looping);
+- at least three of the six prompts with rewards that spread by 0.10 or more,
+  so there's a signal to learn from;
+- the same code and config you're about to train with.
 
-  Rankings must agree with your labels: the better draft can't have a problem
-  the worse one doesn't (if the worse draft is faithful or has the key content,
-  the better one must too). Both drafts may have errors; then rank them on
-  `style` or `quality`, for example one small misstatement against several
-  invented details. A `source_support` pair needs the better draft faithful
-  and the worse one not.
-- **List at least one Jev limitation or disagreement** you noticed in
-  `scorer_limitations` (required), set `reviewer` honestly (say if an assistant
-  helped), and set `approved: true` when you're done.
-
-A ranking entry looks like this:
-
-```json
-{"case_id": "the-smoke-case-id", "better": 0, "worse": 1,
- "axes": ["source_support"], "reason": "Draft 1 invents a launch date."}
-```
-
-Then check it:
-
-```bash
-uv run python scripts/review_raw_smoke.py check runs/tutorial-smoke
-```
-
-This check is the only pass/fail gate for training. When it fails it says why:
-
-- **Review form:** a missing label, field or rule in your file. Fix it and check again.
-- **Jev disagrees:** a ranking where Jev's reward gap is under 0.05. Pick another
-  pair you and Jev agree on; if there aren't three, stop.
-- **Signal:** not enough spread, broken drafts or failed fixed checks. Stop.
-  Don't resample until it passes or loosen the rules.
-- **Setup:** the smoke doesn't match the current code or config. Run a new smoke.
+**Recommended:** open `runs/tutorial-smoke/comparison.html` and read the drafts.
+If Jev's rewards look wrong, stop and don't train. For a stricter gate, record
+a full review and train with `--require-review`
+([how to review](../experiments/raw-base-v1/README.md#optional-smoke-review)).
 
 ## 4. Train
 
@@ -123,7 +85,7 @@ uv run fw-jev run --smoke-from runs/tutorial-smoke \
   --output runs/tutorial-live --execute
 ```
 
-The trainer re-checks the smoke, scores the untrained model on the 24
+The trainer checks the smoke (step 3), scores the untrained model on the 24
 evaluation prompts, runs 24 updates (eight drafts per prompt, four prompts per
 update), then scores the final model. It stops on its own if something looks
 wrong, such as the policy drifting too far from the base model.
@@ -138,7 +100,9 @@ three times with backoff before stopping. Optimizer calls are never retried.
 
 ## 5. Inspect the result
 
-Do the blind review before you look at any scores:
+If you want a blind review, do it before you look at any scores. It's optional:
+to see the numbers straight away, run `uv run fw-jev report runs/tutorial-live`
+and open `runs/tutorial-live/paired.html`.
 
 ```bash
 uv run python scripts/audit_run.py runs/tutorial-live \

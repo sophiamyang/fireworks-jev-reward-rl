@@ -10,7 +10,7 @@ from fw_jev.storage import digest
 ROOT = Path(__file__).resolve().parents[1]
 
 # Tell a fixable review-form problem apart from a smoke that shouldn't train.
-FORM = ("full-draft review", "Every smoke sample", "labels", "scorer limitations",
+FORM = ("full-draft review", "review required", "Every smoke sample", "labels", "scorer limitations",
         "reviewed mixed-objective rankings", "ranking evidence", "nonanswers", "defect",
         "Source-support ranking")
 DISAGREE = ("frozen reward margin",)
@@ -64,7 +64,7 @@ def main():
     else:
         config, train, _, root = load(ROOT / "experiments/raw-base-v1/config.json")
         try:
-            print(json.dumps(check_admission(args.folder, root, config, train), indent=2))
+            print(json.dumps(check_admission(args.folder, root, config, train, require_review=True), indent=2))
         except ValueError as exc:
             raise SystemExit(f"Check failed: {exc}\n{explain(str(exc))}") from None
 

@@ -32,6 +32,9 @@ def main():
             p.add_argument("--mock", action="store_true")
             p.add_argument("--wandb", action="store_true")
             p.add_argument("--smoke-from")
+            p.add_argument(
+                "--require-review", action="store_true", help="Also require an approved smoke-review.json"
+            )
     p = sub.add_parser("report")
     p.add_argument("folder")
     args = parser.parse_args()
@@ -51,6 +54,7 @@ def main():
                 mock=args.mock,
                 wandb=args.wandb,
                 smoke_from=args.smoke_from,
+                require_review=args.require_review,
             )
             # Keep evaluation scores off the console so the blind review stays blind.
             status = (summary or {}).get("status", {})

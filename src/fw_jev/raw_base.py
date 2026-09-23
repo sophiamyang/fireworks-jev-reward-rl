@@ -30,7 +30,7 @@ class VerifiedRawBase(Fireworks):
         verify_model(config["model"], info.model_data.model_name)
 
 
-def check_admission(folder, root, config, train):
+def check_admission(folder, root, config, train, *, require_review=False):
     from .runner import fingerprint
 
     folder = Path(folder)
@@ -113,15 +113,22 @@ def check_admission(folder, root, config, train):
     }
     if len(eligible) < policy["minimum_eligible_groups"]:
         raise ValueError("Insufficient mixed-objective numeric signal")
-    reviewed = check_mixed_review(folder, rows, policy, eligible)
+    # The full-draft review is recommended; it gates training only when required or approved.
+    review_path = folder / "smoke-review.json"
+    if require_review and not review_path.exists():
+        raise ValueError("Smoke review required: create and approve smoke-review.json")
+    approved = review_path.exists() and read(review_path).get("approved") is True
+    reviewed = check_mixed_review(folder, rows, policy, eligible) if require_review or approved else None
     return {
         "policy": policy["version"],
         "policy_sha256": digest(policy_path),
+        "review": "approved" if reviewed else "not approved" if review_path.exists() else "not provided",
+        "review_required": require_review,
         "reviewed_groups": reviewed,
         "eligible_groups": len(eligible),
         "reward_version": VERSION,
         "smoke_records_sha256": digest(folder / "records.json"),
-        "review_sha256": digest(folder / "smoke-review.json"),
+        "review_sha256": digest(review_path) if review_path.exists() else None,
         "fixed_checks_passed": True,
     }
 

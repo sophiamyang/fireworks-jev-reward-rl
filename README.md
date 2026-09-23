@@ -97,7 +97,7 @@ uv run fw-jev run --output runs/quickstart-mock --mock
 The mock makes no API calls and simulates no improvement; open
 `runs/quickstart-mock/paired.html` to see the report format. To train for real,
 follow [the tutorial](docs/TUTORIAL.md): add keys, run a small smoke test,
-review it, then train.
+look at it, then train.
 
 ## What's in the repo
 
